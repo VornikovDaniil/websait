@@ -1,0 +1,125 @@
+{% extends "home.html" %}
+{% load static %}
+{% block title %}Все продукты{% endblock %}
+
+{% block content %}
+<div class="fixed-block">
+    <h1>Все продукты</h1>
+    <div class="search-filter-1">
+        <input type="text" placeholder="Поиск" class="search-bar-1">
+        <button class="filter-button-1">
+
+            <span>Фильтры</span>
+        </button>
+    </div>
+    <div class="product-grid">
+        {% for product in products %}
+        <div class="product-card">
+            <div class="product-info">
+                <h2>{{ product.name }}</h2>
+                <p>{{ product.description }}</p>
+                <div class="product-price">Цена: {{ product.price }} ₽</div>
+                <!-- Форма для покупки продукта -->
+                <button type="button" class="buy-button" data-product-id="{{ product.id }}">Купить</button>
+            </div>
+            {% if product.photo %}
+            <img src="{{ product.photo.url }}" alt="{{ product.name }}" class="product-image">
+            {% else %}
+            <img src="{% static 'icon/11.png' %}" alt="Продукт" class="product-image">
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div> <!-- Закрытие блока product-grid -->
+
+    {% if not products %}
+    <p>Нет продуктов для отображения.</p>
+    {% endif %}
+
+
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Форма для обратной связи</h2>
+            <form id="orderForm" method="post" action="">
+                {% csrf_token %}
+                <input type="hidden" id="product_id" name="product_id" value="">
+                <div class="form-row">
+                    <input type="text" id="name" name="name" placeholder="Имя" required>
+                </div>
+                <div class="form-row">
+                    <input type="email" id="email" name="email" placeholder="Mail" required>
+                </div>
+                <div class="form-row">
+                    <input type="tel" id="phone" name="phone" placeholder="Номер телефона" required>
+                </div>
+                <button type="submit">Отправить</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="pagination">
+        {% if products.has_previous %}
+        <a href="?page={{ products.previous_page_number }}" class="next-page">&lt;</a>
+        {% endif %}
+
+        {% for num in products.paginator.page_range %}
+        {% if products.number == num %}
+        <a href="?page={{ num }}" class="page active">{{ num }}</a>
+        {% else %}
+        <a href="?page={{ num }}" class="page">{{ num }}</a>
+        {% endif %}
+        {% endfor %}
+
+        {% if products.has_next %}
+        <a href="?page={{ products.next_page_number }}" class="next-page">&gt;</a>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var modal = document.getElementById("modal");
+        var closeBtn = document.getElementsByClassName("close")[0];
+        var form = document.getElementById("orderForm");
+        var productIdInput = document.getElementById("product_id");
+
+        if (modal && closeBtn && form && productIdInput) {
+            // Функция для открытия модального окна
+            function openModal(productId) {
+                productIdInput.value = productId;
+                form.action = "{% url 'profille:buy_product' 0 %}".replace('0', productId);
+                modal.style.display = "block";
+            }
+
+            // Добавляем обработчик на все кнопки "Купить"
+            document.querySelectorAll('.buy-button').forEach(function(button) {
+                button.addEventListener('click', function() {
+                    var productId = this.getAttribute('data-product-id');
+                    openModal(productId);
+                });
+            });
+
+            // Закрыть модальное окно при нажатии на <span> (x)
+            closeBtn.onclick = function() {
+                modal.style.display = "none";
+            }
+
+            // Закрыть модальное окно, если пользователь кликнул вне его
+            window.onclick = function(event) {
+                if (event.target == modal) {
+                    modal.style.display = "none";
+                }
+            }
+
+            // Обработка формы (можете добавить свои действия)
+            form.onsubmit = function(event) {
+                alert("Заказ подтвержден!");
+                location.reload(); // Обновление страницы после подтверждения
+            };
+        } else {
+            console.error('Не удалось инициализировать модальное окно. Проверьте, что все элементы существуют.');
+        }
+    });
+</script>
+
+{% endblock %}
